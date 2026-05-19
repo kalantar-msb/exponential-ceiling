@@ -1,1 +1,265 @@
-# exponential-ceiling
+# Sim2Real Bundle: Exponential Per-Band Dispatch Ceiling (Parameter-Free)
+
+Simulation-evolved dispatch ceiling policy that reduces critical-band P99 TTFT by **57-95%** under load, with zero request loss. Transferable to llm-d as a `UsageLimitPolicy` plugin.
+
+## File Structure
+
+```
+exponential_ceiling/
+  algorithms/
+    exponential_ceiling.go       — Treatment plugin (Go, llm-d compatible)
+    constant_ceiling_control.go  — Control plugin (ceiling=1.0, same interface)
+  workloads/                     — BLIS workload YAMLs (5 shapes x 2 load levels)
+  scripts/
+    run.sh                       — Clone BLIS, build, run baseline + treatment
+    compare.sh                   — Parse results, print comparison table
+    treatment.patch              — One-line code patch for BLIS
+  results/                       — Simulation output (populated by run.sh)
+  config.md                      — Deployment config (vLLM, llm-d, BLIS flags)
+  README.md                      — This file
+```
+
+## Algorithm: Exponential Ceiling (Treatment)
+
+**Source**: [`algorithms/exponential_ceiling.go`](algorithms/exponential_ceiling.go)
+
+```
+ceiling[i] = exp(-N * sat * i / (N-1))
+```
+
+- `N` = number of active priority bands
+- `sat` = pool-wide saturation (0.0 to 1.0)
+- `i` = band position (0 = highest priority, N-1 = lowest)
+
+| Saturation | Critical (i=0) | Sheddable (i=1) |
+|------------|---------------|-----------------|
+| 0.0 | 1.0 | 1.0 |
+| 0.4 | 1.0 | 0.45 |
+| 0.8 | 1.0 | 0.20 |
+
+Parameter-free: uses only saturation and band count, both already in the dispatch path.
+
+## Algorithm: Constant Ceiling Control
+
+**Source**: [`algorithms/constant_ceiling_control.go`](algorithms/constant_ceiling_control.go)
+
+Returns ceiling=1.0 for all bands via the same plugin interface. Deploy alongside treatment to confirm plugin framework introduces no behavioral difference vs default llm-d.
+
+## How to Transfer to llm-d
+
+### Signal Mapping
+
+| Signal | llm-d accessor |
+|--------|--------------|
+| Saturation | `SaturationDetector.Saturation(ctx, pool)` — `avg(max(QD/5, KV/0.8))` |
+| Priority | `InferenceObjective.Spec.Priority` |
+| Band count | `shard.AllOrderedPriorityLevels()` — dynamic, descending order |
+
+### Priority Tiers (InferenceObjective CRs)
+
+| Tier | Priority | Role |
+|------|----------|------|
+| critical | 100 | Protected — ceiling stays at 1.0 under load |
+| sheddable | -50 | Low-priority — gated earliest, held in queue |
+
+### Building llm-d with the Plugin
+
+Build from llm-d-inference-scheduler (aka `llm-d-router`) at commit `a10f9ac8` or later. The plugin requires no new dependencies — only `math` from the standard library. After adding the file and registration line below, build the EPP binary as usual (`make build` or `go build ./cmd/epp/`).
+
+### Transfer: Treatment (Exponential Ceiling)
+
+**Step 1.** Create `pkg/epp/framework/plugins/flowcontrol/usagelimits/exponentialceiling/policy.go`:
+
+```go
+package exponentialceiling
+
+import (
+	"context"
+	"encoding/json"
+	"math"
+
+	"github.com/llm-d/llm-d-router/pkg/epp/framework/interface/plugin"
+	"github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/flowcontrol/usagelimits"
+)
+
+const PolicyType = "exponential-ceiling-policy"
+
+func Factory(name string, _ json.RawMessage, _ plugin.Handle) (plugin.Plugin, error) {
+	return usagelimits.NewPolicyFunc(name, computeExponentialCeilings), nil
+}
+
+func computeExponentialCeilings(_ context.Context, saturation float64, priorities []int) []float64 {
+	n := len(priorities)
+	ceilings := make([]float64, n)
+	if n <= 1 {
+		if n == 1 {
+			ceilings[0] = 1.0
+		}
+		return ceilings
+	}
+	for i := range priorities {
+		ceilings[i] = math.Exp(-float64(n) * saturation * float64(i) / float64(n-1))
+	}
+	return ceilings
+}
+```
+
+**Step 2.** Register in `cmd/epp/runner/runner.go`:
+
+```go
+import "github.com/llm-d/llm-d-router/pkg/epp/framework/plugins/flowcontrol/usagelimits/exponentialceiling"
+
+// Near line 480, next to existing registrations:
+fwkplugin.Register(exponentialceiling.PolicyType, exponentialceiling.Factory)
+```
+
+**Step 3.** EndpointPickerConfig YAML:
+
+```yaml
+apiVersion: inference.networking.x-k8s.io/v1alpha1
+kind: EndpointPickerConfig
+featureGates:
+  - flowControl
+plugins:
+  - type: exponential-ceiling-policy
+    name: exponential-ceiling
+  - type: random-picker
+schedulingProfiles:
+  - name: default
+    plugins:
+      - pluginRef: random-picker
+flowControl:
+  usageLimitPolicyPluginRef: "exponential-ceiling"
+```
+
+### Transfer: Baseline (Default llm-d)
+
+No custom plugin. Flow control enabled with default constant ceiling (1.0 for all bands):
+
+```yaml
+apiVersion: inference.networking.x-k8s.io/v1alpha1
+kind: EndpointPickerConfig
+featureGates:
+  - flowControl
+plugins:
+  - type: random-picker
+schedulingProfiles:
+  - name: default
+    plugins:
+      - pluginRef: random-picker
+flowControl: {}
+```
+
+### Transfer: Control (Constant Ceiling via Plugin)
+
+Same 1.0 ceiling delivered through custom plugin framework. Should match baseline exactly — if not, framework bug.
+
+```yaml
+apiVersion: inference.networking.x-k8s.io/v1alpha1
+kind: EndpointPickerConfig
+featureGates:
+  - flowControl
+plugins:
+  - type: constant-ceiling-control
+    name: constant-control
+  - type: random-picker
+schedulingProfiles:
+  - name: default
+    plugins:
+      - pluginRef: random-picker
+flowControl:
+  usageLimitPolicyPluginRef: "constant-control"
+```
+
+### Load Generator (blis observe)
+
+```bash
+blis observe \
+  --max-concurrency 10000 \
+  --warmup-requests 200 \
+  --timeout 900 \
+  ...
+```
+
+- **`--max-concurrency 10000`**: True open-loop arrival. Default 256 is too low — causes client-side queueing that masks overload.
+- **`--warmup-requests 200`**: Discard initial requests to avoid cold-start artifacts.
+- **`--timeout 900`**: Per-request HTTP timeout (15 min). Prevents premature timeouts under overload.
+
+### Deployment Plan
+
+Three variants to deploy and compare:
+
+1. **Default llm-d** — `flowControl: {}` (constant ceiling 1.0, no custom plugin)
+2. **Constant Control** — same 1.0 ceiling via `constant-ceiling-control` plugin
+3. **Exponential** — `exp(-N*sat*i/(N-1))` via `exponential-ceiling-policy` plugin
+
+Comparing (1) vs (2) isolates plugin framework overhead. Comparing (2) vs (3) isolates the algorithm improvement.
+
+All three use `random-picker` — purely random endpoint selection. The ceiling policy is the only variable.
+
+## Config
+
+See [`config.md`](config.md) for vLLM pod arguments, llm-d configuration, and BLIS simulation flags.
+
+## Simulation Results
+
+| Workload | Crit TTFT P99 Δ | Crit E2E P99 Δ | Throughput Δ |
+|---|---|---|---|
+| **balanced_mid** (rate=90, crit 50%/shed 50%) | **-79%** | -37% | -28% |
+| **balanced_under** (rate=35) | +0% (dormant) | +0% | +0% |
+| **blindspot_mid** (rate=10, crit 10%/shed 90%) | **-95%** | -40% | -26% |
+| **blindspot_under** (rate=5) | **-89%** | -28% | -20% |
+| **chatbot_mid** (rate=10, crit 80%/shed 20%) | -1% (too overloaded) | -2% | -7% |
+| **chatbot_under** (rate=5) | **-94%** | -21% | -17% |
+| **codecompletion_mid** (rate=95, crit 30%/shed 70%) | **-57%** | -39% | -26% |
+| **codecompletion_under** (rate=40) | +0% (dormant) | +0% | +0% |
+
+Model: Qwen3-14B, 4x H100 TP=1, trained-physics latency model, seed=42.
+
+### Key observations
+
+- **Strong effect (-57% to -95%)** when system is moderately overloaded and has sufficient sheddable traffic to gate.
+- **Dormant (+0%)** when system is under capacity — byte-identical to baseline.
+- **No effect (-1%)** when system is catastrophically overloaded (chatbot_mid: 382s baseline TTFT) — formula can't help a system that's 3x beyond capacity.
+- **Throughput cost (17-28%)** at overload — expected tradeoff from holding low-priority traffic longer.
+
+## Workloads
+
+Five workload shapes testing different traffic mixes and request sizes, each at two load levels:
+
+| Family | Critical % | Sheddable % | Input Tokens | Output Tokens | Rate (under/mid) | Purpose |
+|--------|-----------|-------------|--------------|---------------|-------------------|---------|
+| **Balanced** | 50% | 50% | 1024 | 256 | 35 / 90 | Equal split |
+| **Blindspot** | 10% | 90% | 4096 | 1024 | 5 / 10 | Long-context, sheddable-dominant |
+| **Chatbot** | 80% | 20% | 4096 | 1024 | 5 / 10 | Long-context, critical-dominant |
+| **Code Completion** | 30% | 70% | 2048 | 128 | 40 / 95 | Short output, high throughput |
+
+Binary tiers: critical (priority 100, protected) and sheddable (priority -50, gated). All workloads: Poisson arrivals, Gaussian tokens, seed=42, streaming=true, 4 instances.
+
+## Code References (llm-d @ `a10f9ac8`)
+
+| Component | File | Lines |
+|-----------|------|-------|
+| UsageLimitPolicy interface | `pkg/epp/framework/interface/flowcontrol/plugins.go` | 139-178 |
+| Dispatch cycle + ComputeLimit call | `pkg/epp/flowcontrol/controller/internal/processor.go` | 322-375 |
+| HoL blocking check | Same file | 340-347 |
+| Dispatch ticker (1ms) | Same file | 179 |
+| NewConstPolicy (default) | `pkg/epp/framework/plugins/flowcontrol/usagelimits/usagelimitpolicy.go` | 60-68 |
+| NewPolicyFunc helper | Same file | 71 |
+| Plugin registration | `cmd/epp/runner/runner.go` | 480 |
+| Policy selection | `pkg/epp/flowcontrol/config.go` | 62-76 |
+| Saturation detector | `pkg/epp/framework/plugins/flowcontrol/saturationdetector/utilization/detector.go` | 115-137 |
+| Default thresholds (QD=5, KV=0.8) | Same package, `config.go` | 29-33 |
+| Band ordering (descending) | `pkg/epp/flowcontrol/registry/shard.go` | 157-160 |
+| FeatureGate constant | `pkg/epp/flowcontrol/config.go` | 29 |
+| EndpointPickerConfig API | `apix/config/v1alpha1/endpointpickerconfig_types.go` | FlowControlConfig struct |
+
+## Evolution History
+
+Discovered via 9 iterations of Nous campaign (`flow-control-v2`):
+
+1. **Linear** (iter 1): `1-sat*i/(N-1)` — 68-77%, collapses at high load
+2. **sqrt** (iter 2): `1-√sat*i/(N-1)` — 76-83%, heavy batch penalty
+3. **Queue-adaptive** (iter 3): per-band queue share — 77-82%, batch penalty 36-70%
+4. **Exponential** (iter 4-5): `exp(-N*sat*i/(N-1))` — only formula surviving extreme load
+5. **Validation** (iter 6-9): scale invariance, bursty arrivals, throughput, workload sensitivity

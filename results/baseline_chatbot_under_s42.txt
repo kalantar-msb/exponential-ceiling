@@ -1,0 +1,161 @@
+=== Simulation Metrics ===
+{
+  "instance_id": "instance_0",
+  "completed_requests": 945,
+  "still_queued": 0,
+  "still_running": 0,
+  "injected_requests": 945,
+  "total_input_tokens": 3896381,
+  "total_output_tokens": 968375,
+  "vllm_estimated_duration_s": 783.223389,
+  "responses_per_sec": 1.2065523237330187,
+  "tokens_per_sec": 1236.3969380899068,
+  "e2e_mean_ms": 30721.679768253965,
+  "e2e_p90_ms": 40862.881199999996,
+  "e2e_p95_ms": 43369.9846,
+  "e2e_p99_ms": 49546.87976,
+  "ttft_mean_ms": 236.57389735449735,
+  "ttft_p90_ms": 280.06160000000006,
+  "ttft_p95_ms": 964.2129999999981,
+  "ttft_p99_ms": 2550.570839999999,
+  "itl_mean_ms": 29.77754543791282,
+  "itl_p90_ms": 33.618,
+  "itl_p95_ms": 37.279,
+  "itl_p99_ms": 40.87,
+  "scheduling_delay_p99_ms": 2408.6498399999996,
+  "preemption_count": 0,
+  "dropped_unservable": 0,
+  "length_capped_requests": 0,
+  "timed_out_requests": 0
+}
+=== Simulation Metrics ===
+{
+  "instance_id": "instance_1",
+  "completed_requests": 945,
+  "still_queued": 0,
+  "still_running": 0,
+  "injected_requests": 945,
+  "total_input_tokens": 3871593,
+  "total_output_tokens": 974683,
+  "vllm_estimated_duration_s": 781.988372,
+  "responses_per_sec": 1.2084578669412747,
+  "tokens_per_sec": 1246.4162318771666,
+  "e2e_mean_ms": 31181.387812698413,
+  "e2e_p90_ms": 42350.1684,
+  "e2e_p95_ms": 45138.4914,
+  "e2e_p99_ms": 51173.5364,
+  "ttft_mean_ms": 234.49724867724868,
+  "ttft_p90_ms": 341.42,
+  "ttft_p95_ms": 883.978,
+  "ttft_p99_ms": 2316.0764000000004,
+  "itl_mean_ms": 30.032798676851474,
+  "itl_p90_ms": 33.228,
+  "itl_p95_ms": 37.48,
+  "itl_p99_ms": 41.517,
+  "scheduling_delay_p99_ms": 2174.0849599999997,
+  "preemption_count": 0,
+  "dropped_unservable": 0,
+  "length_capped_requests": 0,
+  "timed_out_requests": 0
+}
+=== Simulation Metrics ===
+{
+  "instance_id": "instance_2",
+  "completed_requests": 945,
+  "still_queued": 0,
+  "still_running": 0,
+  "injected_requests": 945,
+  "total_input_tokens": 3882331,
+  "total_output_tokens": 976622,
+  "vllm_estimated_duration_s": 784.91134,
+  "responses_per_sec": 1.2039576342469456,
+  "tokens_per_sec": 1244.2449869561065,
+  "e2e_mean_ms": 31177.676732275133,
+  "e2e_p90_ms": 41557.431800000006,
+  "e2e_p95_ms": 45223.68759999999,
+  "e2e_p99_ms": 52119.265159999995,
+  "ttft_mean_ms": 237.14303492063493,
+  "ttft_p90_ms": 326.80360000000013,
+  "ttft_p95_ms": 1033.3989999999972,
+  "ttft_p99_ms": 2508.6437199999996,
+  "itl_mean_ms": 29.96695635850799,
+  "itl_p90_ms": 34.467,
+  "itl_p95_ms": 37.397,
+  "itl_p99_ms": 41.864,
+  "scheduling_delay_p99_ms": 2373.40564,
+  "preemption_count": 6,
+  "dropped_unservable": 0,
+  "length_capped_requests": 0,
+  "timed_out_requests": 0
+}
+=== Simulation Metrics ===
+{
+  "instance_id": "instance_3",
+  "completed_requests": 945,
+  "still_queued": 0,
+  "still_running": 0,
+  "injected_requests": 945,
+  "total_input_tokens": 3851263,
+  "total_output_tokens": 974288,
+  "vllm_estimated_duration_s": 784.980002,
+  "responses_per_sec": 1.2038523243806152,
+  "tokens_per_sec": 1241.1628290117892,
+  "e2e_mean_ms": 30758.293814814813,
+  "e2e_p90_ms": 41090.1598,
+  "e2e_p95_ms": 43366.8632,
+  "e2e_p99_ms": 48439.6242,
+  "ttft_mean_ms": 229.09473544973545,
+  "ttft_p90_ms": 282.9890000000003,
+  "ttft_p95_ms": 824.0769999999991,
+  "ttft_p99_ms": 2622.3297999999986,
+  "itl_mean_ms": 29.63945789408256,
+  "itl_p90_ms": 32.807,
+  "itl_p95_ms": 36.954,
+  "itl_p99_ms": 40.59,
+  "scheduling_delay_p99_ms": 2499.788439999999,
+  "preemption_count": 0,
+  "dropped_unservable": 0,
+  "length_capped_requests": 0,
+  "timed_out_requests": 0
+}
+=== Simulation Metrics ===
+{
+  "instance_id": "cluster",
+  "completed_requests": 3780,
+  "still_queued": 0,
+  "still_running": 0,
+  "injected_requests": 3780,
+  "total_input_tokens": 15501568,
+  "total_output_tokens": 3893968,
+  "vllm_estimated_duration_s": 784.980002,
+  "responses_per_sec": 4.815409297522461,
+  "tokens_per_sec": 4960.595161760567,
+  "e2e_mean_ms": 30959.759532010583,
+  "e2e_p90_ms": 41370.630900000004,
+  "e2e_p95_ms": 44565.15159999999,
+  "e2e_p99_ms": 50147.06501999999,
+  "ttft_mean_ms": 234.3272291005291,
+  "ttft_p90_ms": 308.8723000000001,
+  "ttft_p95_ms": 915.7867499999998,
+  "ttft_p99_ms": 2524.08491,
+  "itl_mean_ms": 29.854391881574877,
+  "itl_p90_ms": 33.717,
+  "itl_p95_ms": 37.301,
+  "itl_p99_ms": 41.275,
+  "scheduling_delay_p99_ms": 2389.062759999999,
+  "preemption_count": 6,
+  "dropped_unservable": 0,
+  "length_capped_requests": 0,
+  "timed_out_requests": 0
+}
+=== KV Cache Metrics ===
+Preemption Rate: 0.0016
+Cache Hit Rate: 0.0005
+KV Thrashing Rate: 0.0000
+=== Per-SLO Metrics ===
+  critical:
+    TTFT: mean=233591.21 p99=2524084.91 (n=3080)
+    E2E:  mean=31000292.39 p99=49957491.20 (n=3080)
+  sheddable:
+    TTFT: mean=237565.71 p99=2370149.20 (n=700)
+    E2E:  mean=30781414.97 p99=51967700.70 (n=700)
