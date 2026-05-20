@@ -72,18 +72,39 @@ Present the candidate(s) to the user for approval before proceeding.
 **extract for each candidate:**
 - `repo_url`: full GitHub URL (e.g., `https://github.com/llm-d/llm-d-router`)
 - `repo_name`: last path segment (e.g., `llm-d-router`)
-- `ref`: pinned commit if found (e.g., `a10f9ac8`)
+- `ref_from_folder`: pinned commit if found in folder docs (e.g., `a10f9ac8`)
 - `evidence`: list of file:line where the reference was found
+
+**determine ref to pin:**
+Prefer the latest stable release tag. Fall back to main if the required
+interfaces don't exist in any release.
+
+```bash
+# Clone/fetch the repo, then:
+LATEST_RELEASE=$(git tag --sort=-version:refname | grep -v rc | head -1)
+
+# Check if the interfaces used by the algorithm exist at that tag:
+git checkout $LATEST_RELEASE
+# Search for key interface/package paths from the algorithm imports
+# e.g., grep -r "UsageLimitPolicy" pkg/ or check the expected package dir exists
+
+# If found: COMPONENT_REF=$LATEST_RELEASE
+# If not found: the feature is unreleased — use the commit from folder docs
+#   or latest main
+```
 
 **present to user:**
 ```
 Derived target component(s) from folder:
 
-  1. https://github.com/llm-d/llm-d-router @ a10f9ac8
+  1. https://github.com/<org>/<repo>
      evidence:
-       - README.md:81  (import "github.com/llm-d/llm-d-router/pkg/...")
-       - README.md:67  ("Build from llm-d-inference-scheduler (aka llm-d-router) at commit a10f9ac8")
-       - config.md:123 (llm-d | a10f9ac8)
+       - <file>:<line> (<what was found>)
+       ...
+     ref selection:
+       - latest release: <tag> — <interfaces present? yes/no>
+       - folder-pinned commit: <ref> — <interfaces present? yes/no>
+       - recommended: <chosen ref> (<reason>)
 
 Approve this as the target component? [y/n]
 ```
@@ -91,16 +112,16 @@ Approve this as the target component? [y/n]
 **if >1 candidate:** halt and open an issue:
 ```
 Multiple target component candidates detected:
-  1. github.com/llm-d/llm-d-router @ a10f9ac8
-  2. github.com/llm-d/llm-d-inference-scheduler @ <unknown>
+  1. github.com/<org>/<repo1> @ <ref>
+  2. github.com/<org>/<repo2> @ <ref>
 This bootstrap only supports a single target. Please resolve and re-run.
 ```
 
 **on approval, output:** store as shell variables for subsequent tasks:
 ```bash
-COMPONENT_URL="https://github.com/llm-d/llm-d-router"
-COMPONENT_NAME="llm-d-router"
-COMPONENT_REF="a10f9ac8"
+COMPONENT_URL="https://github.com/<org>/<repo>"
+COMPONENT_NAME="<repo>"
+COMPONENT_REF="<chosen ref — tag or commit>"
 ```
 
 ---
@@ -112,11 +133,12 @@ COMPONENT_REF="a10f9ac8"
 **action:** shell
 
 Add the approved target component repository as a git submodule pinned to the
-derived commit.
+chosen ref (release tag or commit).
 
 ```bash
 git submodule add $COMPONENT_URL $COMPONENT_NAME
 cd $COMPONENT_NAME
+git fetch --tags
 git checkout $COMPONENT_REF
 cd ..
 git add .gitmodules $COMPONENT_NAME
@@ -125,13 +147,16 @@ git add .gitmodules $COMPONENT_NAME
 **verify:**
 ```bash
 test -d $COMPONENT_NAME/.git && \
-  (cd $COMPONENT_NAME && git rev-parse HEAD | grep -q "^${COMPONENT_REF}") && \
+  (cd $COMPONENT_NAME && git log --oneline -1) && \
   echo "OK: $COMPONENT_NAME @ $COMPONENT_REF"
 ```
 
 **notes:**
 - The translate skill will write plugin code into this directory.
 - `component.path` in transfer.yaml must match `$COMPONENT_NAME`.
+- If `$COMPONENT_REF` is a release tag (e.g., `v0.8.0`), the submodule is on a
+  stable release. If it's a commit SHA, it's pinned to an unreleased point on main
+  (typical when the required interfaces haven't shipped in a release yet).
 
 ---
 

@@ -13,10 +13,18 @@
       "cached": false,
       "path": "/Users/kalantar/projects/go.workspace/src/github.com/kalantar-msb/exponential-ceiling/workspace/context/exponential-ceiling/d2aa57dc006f.md",
       "context_file_prepared": true,
-      "context_file_populated": false
+      "context_file_populated": true
     },
     "translate": {
-      "checkpoint_hits": 1
+      "status": "done",
+      "timestamp": "2026-05-20T14:30:05.777370+00:00",
+      "files": [
+        "epp",
+        "pkg/epp/framework/plugins/flowcontrol/usagelimits/exponentialceiling/policy.go",
+        "pkg/epp/framework/plugins/flowcontrol/usagelimits/exponentialceiling/policy_test.go"
+      ],
+      "review_rounds": 1,
+      "consensus": "1/1"
     }
   }
 }

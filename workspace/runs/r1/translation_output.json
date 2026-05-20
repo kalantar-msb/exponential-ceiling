@@ -1,0 +1,28 @@
+{
+  "plugin_type": "exponential-ceiling-policy",
+  "files_created": [
+    "epp",
+    "pkg/epp/framework/plugins/flowcontrol/usagelimits/exponentialceiling/policy.go",
+    "pkg/epp/framework/plugins/flowcontrol/usagelimits/exponentialceiling/policy_test.go"
+  ],
+  "files_modified": [
+    "cmd/epp/runner/runner.go"
+  ],
+  "package": "exponentialceiling",
+  "register_file": "cmd/epp/runner/runner.go",
+  "test_commands": [
+    [
+      "go",
+      "build",
+      "./cmd/epp/"
+    ],
+    [
+      "go",
+      "test",
+      "./pkg/epp/framework/plugins/flowcontrol/usagelimits/exponentialceiling/..."
+    ]
+  ],
+  "config_kind": "EndpointPickerConfig",
+  "treatment_config_generated": true,
+  "description": "Exponential per-band dispatch ceiling policy \u2014 ceiling[i] = exp(-N * sat * i / (N-1))"
+}
