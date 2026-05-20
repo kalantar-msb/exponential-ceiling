@@ -1,0 +1,19 @@
+{
+  "baseline": [{
+    "workload": {
+      "model": "Qwen/Qwen3-14B",
+      "hardware": "H100_SXM_80GB"
+    },
+    "vllm_args": {
+      "num_instances": 4,
+      "tensor_parallel_size": 1,
+      "max_num_seqs": 256,
+      "max_num_batched_tokens": 2048,
+      "enable_chunked_prefill": true,
+      "block_size": 16,
+      "gpu_memory_utilization": 0.9,
+      "enable_prefix_caching": false,
+      "enforce_eager": true
+    }
+  }]
+}

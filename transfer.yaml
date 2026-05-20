@@ -1,0 +1,46 @@
+kind: sim2real-transfer
+version: 3
+
+scenario: exponential-ceiling
+
+component:
+  repo: llm-d-router
+  kind: EndpointPickerConfig
+  ref: a10f9ac8
+  base_image:
+    hub: ghcr.io/llm-d
+    name: llm-d-router
+  build:
+    commands:
+      - "go build ./cmd/epp/"
+      - "go test ./pkg/epp/framework/plugins/flowcontrol/..."
+
+algorithms:
+  - name: treatment
+    source: algorithms/exponential_ceiling.go
+    defaults: baseline
+
+baselines:
+  - name: baseline1
+    scenario: baselines/baseline1.yaml
+
+workloads:
+  - workloads/balanced_mid.yaml
+  - workloads/balanced_under.yaml
+  - workloads/blindspot_mid.yaml
+  - workloads/blindspot_under.yaml
+  - workloads/chatbot_mid.yaml
+  - workloads/chatbot_under.yaml
+  - workloads/codecompletion_mid.yaml
+  - workloads/codecompletion_under.yaml
+
+context:
+  text: |
+    UsageLimitPolicy plugin for the flowcontrol subsystem.
+    The algorithm implements a per-band dispatch ceiling computed from pool-wide
+    saturation. It uses the UsageLimitPolicy interface (not the Scorer interface).
+    Registration target: cmd/epp/runner/runner.go near existing plugin registrations.
+    Package location: pkg/epp/framework/plugins/flowcontrol/usagelimits/exponentialceiling/
+  files:
+    - README.md
+    - config.md

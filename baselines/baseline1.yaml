@@ -1,0 +1,25 @@
+scenario:
+- name: baseline1
+
+  model:
+    name: Qwen/Qwen3-14B  # from workload.model
+    shortName: qwen-qwen3-14b  # derived from model name (lookup table)
+    path: models/Qwen/Qwen3-14B  # derived from model name (lookup table)
+    huggingfaceId: Qwen/Qwen3-14B  # from workload.model
+    size: 1Ti  # lookup table (storage estimate)
+    maxModelLen: 40960  # lookup table (model's max context window)
+    blockSize: 16  # from vllm_args.block_size
+    gpuMemoryUtilization: 0.9  # from vllm_args.gpu_memory_utilization
+
+  decode:
+    replicas: 4  # from vllm_args.num_instances
+    acceleratorType:
+      labelKey: nvidia.com/gpu.product
+      labelValue: NVIDIA-H100-80GB-HBM3  # from workload.hardware (lookup table)
+    vllm:
+      additionalFlags:
+      - "--max-num-seqs=256"  # from vllm_args.max_num_seqs
+      - "--max-num-batched-tokens=2048"  # from vllm_args.max_num_batched_tokens
+      - "--enable-chunked-prefill"  # from vllm_args.enable_chunked_prefill
+      - "--no-enable-prefix-caching"  # from vllm_args.enable_prefix_caching
+
