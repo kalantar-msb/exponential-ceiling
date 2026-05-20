@@ -1,0 +1,71 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: treatment-blindspot-mid-r1
+  namespace: kalantar-0
+spec:
+  params:
+  - name: experimentId
+    value: r1
+  - name: runName
+    value: r1
+  - name: namespace
+    value: kalantar-0
+  - name: phase
+    value: treatment
+  - name: scenarioContent
+    value: "scenario:\n- decode:\n    acceleratorType:\n      labelKey: nvidia.com/gpu.product\n\
+      \      labelValue: NVIDIA-H100-80GB-HBM3\n    replicas: 4\n    vllm:\n     \
+      \ additionalFlags:\n      - --max-num-seqs=256\n      - --max-num-batched-tokens=2048\n\
+      \      - --enable-chunked-prefill\n      - --no-enable-prefix-caching\n  huggingface:\n\
+      \    secretName: hf-secret\n  images:\n    inferenceScheduler:\n      pullPolicy:\
+      \ Always\n      repository: ghcr.io/kalantar/llm-d-router\n      tag: r1\n \
+      \ inferenceExtension:\n    pluginsConfigFile: custom-plugins.yaml\n    pluginsCustomConfig:\n\
+      \      custom-plugins.yaml: \"apiVersion: inference.networking.x-k8s.io/v1alpha1\\\
+      nkind:\\\n        \\ EndpointPickerConfig\\nfeatureGates:\\n  - flowControl\\\
+      nplugins:\\n  - type:\\\n        \\ exponential-ceiling-policy\\n    name: exponential-ceiling\\\
+      n  - type: random-picker\\n\\\n        \\    name: random-picker\\nschedulingProfiles:\\\
+      n  - name: default\\n    plugins:\\n\\\n        \\      - pluginRef: random-picker\\\
+      nflowControl:\\n  usageLimitPolicyPluginRef:\\\n        \\ \\\"exponential-ceiling\\\
+      \"\\n\"\n  model:\n    blockSize: 16\n    gpuMemoryUtilization: 0.9\n    huggingfaceId:\
+      \ Qwen/Qwen3-14B\n    maxModelLen: 40960\n    name: Qwen/Qwen3-14B\n    path:\
+      \ models/Qwen/Qwen3-14B\n    shortName: qwen-qwen3-14b\n    size: 1Ti\n  name:\
+      \ flow-control\n"
+  - name: specContent
+    value: "base_dir: /workspace/source/llm-d-benchmark\n\nvalues_file:\n  path: /workspace/source/llm-d-benchmark/config/templates/values/defaults.yaml\n\
+      \ntemplate_dir:\n  path: /workspace/source/llm-d-benchmark/config/templates/jinja\n\
+      \nscenario_file:\n  path: /tmp/llmdbench-config/scenario.yaml\n"
+  - name: workloadName
+    value: blindspot_mid
+  - name: workloadSpec
+    value: "{aggregate_rate: 10, category: language, clients: [{arrival: {process:\
+      \ poisson}, id: critical,\n      input_distribution: {params: {max: 8192, mean:\
+      \ 4096, min: 512, std_dev: 1024},\n        type: gaussian}, output_distribution:\
+      \ {params: {max: 2048, mean: 1024, min: 128,\n          std_dev: 256}, type:\
+      \ gaussian}, rate_fraction: 0.1, slo_class: critical,\n      streaming: true},\
+      \ {arrival: {process: poisson}, id: sheddable, input_distribution: {\n     \
+      \   params: {max: 8192, mean: 4096, min: 512, std_dev: 1024}, type: gaussian},\n\
+      \      output_distribution: {params: {max: 2048, mean: 1024, min: 128, std_dev:\
+      \ 256},\n        type: gaussian}, rate_fraction: 0.9, slo_class: sheddable,\
+      \ streaming: true}],\n  num_requests: 8100, seed: 42, version: '2'}"
+  - name: benchmarkGitRepoUrl
+    value: https://github.com/llm-d/llm-d-benchmark.git
+  - name: benchmarkGitCommit
+    value: 085c8a12ab79c21c33443bf8499467b53beeb764
+  - name: blisGitRepoUrl
+    value: https://github.com/inference-sim/inference-sim.git
+  - name: blisGitCommit
+    value: fdd2d246f03bca3f615c6e2915c08f262be87dcf
+  - name: model
+    value: Qwen/Qwen3-14B
+  pipelineRef:
+    name: sim2real
+  timeouts:
+    pipeline: 4h
+  workspaces:
+  - name: data-storage
+    persistentVolumeClaim:
+      claimName: data-pvc
+  - name: source
+    persistentVolumeClaim:
+      claimName: source-pvc

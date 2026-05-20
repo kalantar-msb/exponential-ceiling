@@ -1,5 +1,5 @@
 scenario:
-- name: baseline1
+- name: "flow-control"
 
   model:
     name: Qwen/Qwen3-14B  # from workload.model

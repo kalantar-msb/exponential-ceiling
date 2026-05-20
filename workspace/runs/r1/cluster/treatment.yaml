@@ -1,0 +1,38 @@
+scenario:
+- decode:
+    acceleratorType:
+      labelKey: nvidia.com/gpu.product
+      labelValue: NVIDIA-H100-80GB-HBM3
+    replicas: 4
+    vllm:
+      additionalFlags:
+      - --max-num-seqs=256
+      - --max-num-batched-tokens=2048
+      - --enable-chunked-prefill
+      - --no-enable-prefix-caching
+  huggingface:
+    secretName: hf-secret
+  images:
+    inferenceScheduler:
+      pullPolicy: Always
+      repository: ghcr.io/kalantar/llm-d-router
+      tag: r1
+  inferenceExtension:
+    pluginsConfigFile: custom-plugins.yaml
+    pluginsCustomConfig:
+      custom-plugins.yaml: "apiVersion: inference.networking.x-k8s.io/v1alpha1\nkind:\
+        \ EndpointPickerConfig\nfeatureGates:\n  - flowControl\nplugins:\n  - type:\
+        \ exponential-ceiling-policy\n    name: exponential-ceiling\n  - type: random-picker\n\
+        \    name: random-picker\nschedulingProfiles:\n  - name: default\n    plugins:\n\
+        \      - pluginRef: random-picker\nflowControl:\n  usageLimitPolicyPluginRef:\
+        \ \"exponential-ceiling\"\n"
+  model:
+    blockSize: 16
+    gpuMemoryUtilization: 0.9
+    huggingfaceId: Qwen/Qwen3-14B
+    maxModelLen: 40960
+    name: Qwen/Qwen3-14B
+    path: models/Qwen/Qwen3-14B
+    shortName: qwen-qwen3-14b
+    size: 1Ti
+  name: flow-control

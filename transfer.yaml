@@ -18,10 +18,10 @@ component:
 algorithms:
   - name: treatment
     source: algorithms/exponential_ceiling.go
-    defaults: baseline
+    defaults: baseline1  # name of baseline (package) that is default
 
 baselines:
-  - name: baseline1
+  - name: baseline1  # package name
     scenario: baselines/baseline1.yaml
 
 workloads:
