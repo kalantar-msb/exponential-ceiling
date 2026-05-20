@@ -1,0 +1,111 @@
+{
+  "run_name": "r1",
+  "run_dir": "workspace/runs/r1",
+  "scenario": "exponential-ceiling",
+  "context_path": "workspace/context/exponential-ceiling/d2aa57dc006f.md",
+  "manifest_path": "transfer.yaml",
+  "baselines": [
+    {
+      "name": "baseline1",
+      "sim_config": null,
+      "real_config": null,
+      "real_notes": ""
+    }
+  ],
+  "algorithms": [
+    {
+      "name": "treatment",
+      "source": "algorithms/exponential_ceiling.go",
+      "config": null,
+      "defaults": "baseline"
+    }
+  ],
+  "algorithm_source": "algorithms/exponential_ceiling.go",
+  "algorithm_config": null,
+  "baseline_sim_config": null,
+  "baseline_real_config": null,
+  "baseline_real_notes": "",
+  "target": {
+    "repo": "llm-d-router"
+  },
+  "build_commands": [
+    [
+      "g",
+      "o",
+      " ",
+      "b",
+      "u",
+      "i",
+      "l",
+      "d",
+      " ",
+      ".",
+      "/",
+      "c",
+      "m",
+      "d",
+      "/",
+      "e",
+      "p",
+      "p",
+      "/"
+    ],
+    [
+      "g",
+      "o",
+      " ",
+      "t",
+      "e",
+      "s",
+      "t",
+      " ",
+      ".",
+      "/",
+      "p",
+      "k",
+      "g",
+      "/",
+      "e",
+      "p",
+      "p",
+      "/",
+      "f",
+      "r",
+      "a",
+      "m",
+      "e",
+      "w",
+      "o",
+      "r",
+      "k",
+      "/",
+      "p",
+      "l",
+      "u",
+      "g",
+      "i",
+      "n",
+      "s",
+      "/",
+      "f",
+      "l",
+      "o",
+      "w",
+      "c",
+      "o",
+      "n",
+      "t",
+      "r",
+      "o",
+      "l",
+      "/",
+      ".",
+      ".",
+      "."
+    ]
+  ],
+  "config_kind": "EndpointPickerConfig",
+  "context": {
+    "text": "UsageLimitPolicy plugin for the flowcontrol subsystem.\nThe algorithm implements a per-band dispatch ceiling computed from pool-wide\nsaturation. It uses the UsageLimitPolicy interface (not the Scorer interface).\nRegistration target: cmd/epp/runner/runner.go near existing plugin registrations.\nPackage location: pkg/epp/framework/plugins/flowcontrol/usagelimits/exponentialceiling/\n"
+  }
+}

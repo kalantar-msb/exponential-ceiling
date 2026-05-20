@@ -1,0 +1,22 @@
+{
+  "run_name": "r1",
+  "scenario": "exponential-ceiling",
+  "phases": {
+    "init": {
+      "status": "done",
+      "timestamp": "2026-05-20T13:28:44.164826+00:00"
+    },
+    "context": {
+      "status": "done",
+      "timestamp": "2026-05-20T13:28:44.199384+00:00",
+      "hash": "d2aa57dc006f",
+      "cached": false,
+      "path": "/Users/kalantar/projects/go.workspace/src/github.com/kalantar-msb/exponential-ceiling/workspace/context/exponential-ceiling/d2aa57dc006f.md",
+      "context_file_prepared": true,
+      "context_file_populated": false
+    },
+    "translate": {
+      "checkpoint_hits": 1
+    }
+  }
+}
